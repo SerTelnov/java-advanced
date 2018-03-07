@@ -108,7 +108,7 @@ public class ArraySetTester {
     }
 
 
-    private List<Integer> getRandomIntegerList() {
+    public static List<Integer> getRandomIntegerList() {
         Random random = new Random();
 
         final int size = Math.abs(random.nextInt()) % 1000;
@@ -120,13 +120,13 @@ public class ArraySetTester {
         }};
     }
 
-    private List<Integer> getOneElementList() {
+    public static List<Integer> getOneElementList() {
         return new ArrayList<Integer>() {{
             add(1);
         }};
     }
 
-    private List<Integer> getList() {
+    public static List<Integer> getList() {
         return new ArrayList<Integer>() {{
             add(1);
             add(3);
