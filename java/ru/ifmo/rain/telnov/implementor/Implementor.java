@@ -21,23 +21,53 @@ import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 
 /**
- * Created by Telnov Sergey on 11.03.2018.
+ * Implementation for interface {@link JarImpler}.
  */
 public class Implementor implements JarImpler {
+    /**
+     * Constructor for class {@code Implementor}.
+     */
+    public Implementor() { }
 
-    public static void main(String[] args) throws ImplerException {
+    /**
+     * Entry point for application to start from command line.
+     * <p>
+     * Usage:
+     * <ul>
+     *     <li>{@code java -jar Implementor.jar -jar <interface-to-implement> <path-to-jar>}</li>
+     * </ul>
+     * @param args arguments from command line.
+     */
+    public static void main(String[] args) {
         if (args.length < 3) {
-            throw new ImplerException("usage: -jar <class-name> <file.jar>");
+            System.err.println("usage: -jar <interface-to-implement> <file.jar>");
         } else if (args[0].equals("-jar")) {
             JarImpler impler = new Implementor();
             try {
-                impler.implementJar(Class.forName(args[1]), Paths.get(args[2]));
+                Class<?> clazz = Class.forName(args[1]);
+                Path path = Paths.get(args[2]);
+
+                impler.implementJar(clazz, path);
             } catch (ClassNotFoundException e) {
                 System.err.println("can't found class: '" + args[2] + "'");
+            } catch (ImplerException e) {
+                System.err.println("can't generate jar with file");
             }
         }
     }
 
+    /**
+     * Implement interface <tt>token</tt> and locate it in file <tt>path</tt>.
+     *
+     * <p>
+     * Generated class should have full name as implementing interface with <tt>Impl</tt> at the end.
+     * Generated file should be placed in the correct subdirectory of the specified <tt>root</tt>
+     * directory and have correct file name.
+     *
+     * @param token interface to implement.
+     * @param root root of directory.
+     * @throws ImplerException if can't implement <code>token</code>.
+     */
     @Override
     public void implement(Class<?> token, Path root) throws ImplerException {
         if (!token.isInterface()) {
@@ -59,21 +89,30 @@ public class Implementor implements JarImpler {
         }
     }
 
+    /**
+     * Produce <tt>.jar</tt> file and collect implementation of <tt>token</tt>.
+     * <p>
+     * Generate <tt>.jar</tt> file, that collect implementing of given interface specified by provided <tt>token</tt>
+     * and locate in path <code>jarFile</code>. If source implementation don't exist, build source file. Then compile
+     * source file and write binary file to <tt>.jar</tt>. Then delete compiled file.
+     *
+     * @param token type token to create implementation for.
+     * @param jarFile target <tt>.jar</tt> file.
+     * @throws ImplerException when can't generate <tt>.jar</tt> file and store implementing of <code>token</code>.
+     */
     @Override
     public void implementJar(Class<?> token, Path jarFile) throws ImplerException {
-        String root = jarFile.getParent().toString();
-        String fileName = getFileName(token.getCanonicalName());
-        String sourceDirectoryName = getFullDirectoryPath(jarFile.getFileName());
+        Path root = jarFile.getParent();
+        String fullFileName = getPathName(jarFile.getFileName().toString());
 
-        compileFile(String.format("%s/%s/%sImpl.java", root, sourceDirectoryName, fileName));
-        String compiledFile = String.format("%s/%sImpl.class", sourceDirectoryName, fileName);
+        boolean sourceFileWasCreated = compileFile(token, String.format("%s/%sImpl.java", root, fullFileName), root);
+        String compiledFile = String.format("%sImpl.class", fullFileName);
 
         try (JarOutputStream jarWriter = new JarOutputStream(
-                new FileOutputStream(jarFile.toFile()), getManifest()))
-        {
+                new FileOutputStream(jarFile.toFile()), getManifest())) {
             jarWriter.putNextEntry(new ZipEntry(compiledFile));
 
-            ByteChannel inChannel = Files.newByteChannel(Paths.get(String.format("%s/%s", root, compiledFile)));
+            ByteChannel inChannel = Files.newByteChannel(getPath(String.format("%s/%s", root, compiledFile)));
             ByteBuffer buffer = ByteBuffer.allocate(2048);
 
             while (inChannel.read(buffer) >= 0) {
@@ -87,16 +126,49 @@ public class Implementor implements JarImpler {
         } catch (IOException e) {
             throw new ImplerException(e);
         } finally {
-            Path fileToDelete = getPath(compiledFile);
-            if (Files.exists(fileToDelete)) {
-                try {
-                    Files.delete(fileToDelete);
-                } catch (IOException ignored) { }
-            }
+            try {
+                deleteFile(compiledFile);
+                if (sourceFileWasCreated) {
+                    deleteFile(String.format("%s/%sImpl.java", root, fullFileName));
+                }
+            } catch (IOException | ImplerException ignored) { }
         }
     }
 
-    private void compileFile(String file) throws ImplerException {
+    /**
+     * Delete given <tt>file</tt>.
+     *
+     * @param file file to Delete
+     * @throws ImplerException then can't get file's path.
+     * @throws IOException then can't delete file.
+     */
+    private void deleteFile(String file) throws ImplerException, IOException {
+        Path fileToDelete = getPath(file);
+        if (Files.exists(fileToDelete)) {
+            Files.delete(fileToDelete);
+        }
+    }
+
+    /**
+     * Compile given <tt>file</tt>.
+     *<p>
+     * Compile source <tt>file</tt>. If <tt>file</tt> don't exist, implement <tt>token</tt> and write
+     * information to <tt>file</tt> and compile it.
+     *
+     * @param token interface to implement.
+     * @param file to compile.
+     * @param root interface's path root.
+     * @return true if source file <tt>.java</tt> was created, false otherwise.
+     * @throws ImplerException when can't compile <code>file</code>.
+     */
+    private boolean compileFile(Class<?> token, String file, Path root) throws ImplerException {
+        boolean wasCreated = false;
+        Path sourceFile = getPath(file);
+        if (Files.notExists(sourceFile)) {
+            implement(token, root);
+            wasCreated = true;
+        }
+
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         int exitCode = compiler.run(null, null, null,
                 file, "-cp", System.getProperty("java.class.path"));
@@ -104,31 +176,45 @@ public class Implementor implements JarImpler {
         if (exitCode != 0) {
             throw new ImplerException("can't compile source file\nExit code: '" + exitCode + "'");
         }
+        return wasCreated;
     }
 
+    /**
+     * Generate <tt>Manifest</tt>.
+     * <p>
+     * Generate <tt>Manifest</tt> for <tt>.jar</tt> file.
+     *
+     * @return <tt>Manifest</tt>.
+     */
     private Manifest getManifest() {
         Manifest manifest = new Manifest();
         manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
         return manifest;
     }
 
-    private String getFileName(String path) {
-        String[] tokens = path.split("[.]");
+    /**
+     * Generate absolute part from full path.
+     * <p>
+     *
+     * @param path full path
+     * @return absolute path
+     */
+    private String getPathName(String path) {
+        String[] tokens = path.split("[.|\\\\]");
         return Stream.of(tokens)
-                .skip(tokens.length - 1)
-                .collect(Collectors
-                        .joining());
-    }
-
-    private String getFullDirectoryPath(Path path) {
-        String[] tokens = path
-                .toString().split("[.|\\\\]");
-        return Stream.of(tokens)
-                .limit(tokens.length - 2)
+                .limit(tokens.length - 1)
                 .collect(Collectors
                         .joining("/"));
     }
 
+    /**
+     * Generate <tt>Path</tt>.
+     * <p>
+     *
+     * @param name path name.
+     * @return generated <tt>Path</tt>.
+     * @throws ImplerException when name contains invalid path.
+     */
     private Path getPath(String name) throws ImplerException {
         try {
             return Paths.get(name);
@@ -137,6 +223,15 @@ public class Implementor implements JarImpler {
         }
     }
 
+    /**
+     * Create <tt>Path</tt> from file <tt>root</tt> and file's package name.
+     * <p>
+     *
+     * @param root root of file.
+     * @param fileName file name.
+     * @return created <tt>Path</tt>
+     * @throws ImplerException when can't generate <tt>path</tt>
+     */
     private Path createPath(Path root, String fileName) throws ImplerException {
         try {
             Path path = getPath(String.format("%s%c%sImpl.java",
