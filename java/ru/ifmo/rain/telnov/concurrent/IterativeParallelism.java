@@ -17,15 +17,15 @@ public class IterativeParallelism implements ListIP {
                                   final Function<Stream<? extends T>, ? extends R> func,
                                   final Function<Stream<? extends R>, ? extends R> rFunc)
             throws InterruptedException {
-        threads = Math.max(1, Math.min(threads, list.size()));
+        final int threadsCount = Math.min(threads, list.size());
 
-        final List<R> values = new ArrayList<>(Collections.nCopies(threads, null));
-        final List<Thread> workers = new ArrayList<>(Collections.nCopies(threads, null));
+        final List<R> values = new ArrayList<>(Collections.nCopies(threadsCount, null));
+        final List<Thread> workers = new ArrayList<>(Collections.nCopies(threadsCount, null));
 
-        final int count = list.size() / threads;
-        int rest = list.size() % threads;
+        final int count = list.size() / threadsCount;
+        int rest = list.size() % threadsCount;
         int prevRight = 0;
-        for (int i = 0; i != threads; i++) {
+        for (int i = 0; i != threadsCount; i++) {
             final int index = i;
             final int left = prevRight;
             final int right = prevRight + count + (rest-- > 0 ? 1 : 0);
@@ -42,7 +42,7 @@ public class IterativeParallelism implements ListIP {
 
     @Override
     public <T> T maximum(int threads, List<? extends T> values, Comparator<? super T> comparator) throws InterruptedException {
-        final Function<Stream<? extends T>, T> func = stream -> stream.max(comparator).get();
+        final Function<Stream<? extends T>, T> func = stream -> stream.max(comparator).orElse(null);
         return customMethod(threads, values, func, func);
     }
 
