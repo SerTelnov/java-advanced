@@ -25,6 +25,10 @@ public class MapperIterativeParallelism extends IterativeParallelism {
                                     final Function<Stream<? extends T>, ? extends R> func,
                                     final Function<Stream<? extends R>, ? extends R> rFunc)
             throws InterruptedException {
+        if (threads <= 0) {
+            throw new RuntimeException("number of threads must be move then zero!");
+        }
+
         final int nThread = Math.min(list.size(), threads);
 
         final List<Stream<? extends T>> blocks = getBlocks(list, nThread);

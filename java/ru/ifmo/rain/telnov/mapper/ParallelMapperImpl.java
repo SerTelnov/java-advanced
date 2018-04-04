@@ -15,6 +15,10 @@ public class ParallelMapperImpl implements ParallelMapper {
     private final Thread[] workers;
 
     public ParallelMapperImpl(final int nThread) {
+        if (nThread <= 0) {
+            throw new RuntimeException("number of threads must be move then zero!");
+        }
+
         workers = new Thread[nThread];
         for (int i = 0; i != nThread; i++) {
             workers[i] = new Thread(new Worker());
@@ -49,9 +53,12 @@ public class ParallelMapperImpl implements ParallelMapper {
     public void close() {
         for (Thread worker : workers) {
             worker.interrupt();
+        }
+        for (Thread worker : workers) {
             try {
                 worker.join();
-            } catch (InterruptedException ignored) { }
+            } catch (InterruptedException ignored) {
+            }
         }
     }
 
