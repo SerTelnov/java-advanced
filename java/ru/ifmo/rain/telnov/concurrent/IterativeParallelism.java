@@ -13,26 +13,46 @@ import java.util.stream.Stream;
  */
 public class IterativeParallelism implements ListIP {
 
-    private <T, R> R customMethod(int threads, final List<? extends T> list,
+    public static <T> List<Stream<? extends T>> getBlocks(final List<? extends T> list, final int nThreads) {
+        List<Stream<? extends T>> subList = new ArrayList<>(Collections.nCopies(nThreads, null));
+        for (int i = 0; i < nThreads; i++) {
+            final int left = i * list.size() / nThreads;
+            final int right = (i + 1) * list.size() / nThreads;
+            subList.set(i, (list.subList(left, right).stream()));
+        }
+        return subList;
+    }
+
+    protected <T, R> R customMethod(int threads, final List<? extends T> list,
                                   final Function<Stream<? extends T>, ? extends R> func,
                                   final Function<Stream<? extends R>, ? extends R> rFunc)
             throws InterruptedException {
-        final int threadsCount = Math.min(threads, list.size());
+        final int nThread = Math.min(list.size(), threads);
 
-        final List<R> values = new ArrayList<>(Collections.nCopies(threadsCount, null));
-        final List<Thread> workers = new ArrayList<>(Collections.nCopies(threadsCount, null));
+        final List<R> values = new ArrayList<>(Collections.nCopies(nThread, null));
+        final Thread[] workers = new Thread[nThread];
+        final List<Stream<? extends T>> blocks = getBlocks(list, nThread);
 
-        final int count = list.size() / threadsCount;
-        int rest = list.size() % threadsCount;
-        int prevRight = 0;
-        for (int i = 0; i != threadsCount; i++) {
+        for (int i = 0; i != nThread; i++) {
             final int index = i;
-            final int left = prevRight;
-            final int right = prevRight + count + (rest-- > 0 ? 1 : 0);
-            prevRight = right;
 
-            workers.set(i, new Thread(() -> values.set(index, func.apply(list.subList(left, right).stream()))));
-            workers.get(i).start();
+            Thread worker;
+//            if (nThread == 1) {
+//                worker = new Thread(() -> {
+//                    try {
+//                        Thread.sleep(3);
+//                    } catch (InterruptedException ignored) { }
+//                    values.set(index,
+//                            func.apply(blocks.get(index)));
+//                });
+//            } else {
+                worker = new Thread(() -> {
+                    values.set(index,
+                            func.apply(blocks.get(index)));
+                });
+//            }
+            worker.start();
+            workers[i] = worker;
         }
         for (Thread worker: workers) {
             worker.join();
