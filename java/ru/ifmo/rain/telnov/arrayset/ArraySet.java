@@ -16,7 +16,8 @@ public class ArraySet<E> extends AbstractSet<E> implements SortedSet<E> {
     protected List<E> data = emptyList();
     protected Comparator<? super E> comparator = null;
 
-    public ArraySet() { }
+    public ArraySet() {
+    }
 
     public ArraySet(final Collection<? extends E> collection) {
         this(collection, null);

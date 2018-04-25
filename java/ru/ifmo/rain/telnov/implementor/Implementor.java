@@ -27,15 +27,17 @@ public class Implementor implements JarImpler {
     /**
      * Constructor for class {@code Implementor}.
      */
-    public Implementor() { }
+    public Implementor() {
+    }
 
     /**
      * Entry point for application to start from command line.
      * <p>
      * Usage:
      * <ul>
-     *     <li>{@code java -jar Implementor.jar -jar <interface-to-implement> <path-to-jar>}</li>
+     * <li>{@code java -jar Implementor.jar -jar <interface-to-implement> <path-to-jar>}</li>
      * </ul>
+     *
      * @param args arguments from command line.
      */
     public static void main(String[] args) {
@@ -58,14 +60,14 @@ public class Implementor implements JarImpler {
 
     /**
      * Implement interface <tt>token</tt> and locate it in file <tt>path</tt>.
-     *
+     * <p>
      * <p>
      * Generated class should have full name as implementing interface with <tt>Impl</tt> at the end.
      * Generated file should be placed in the correct subdirectory of the specified <tt>root</tt>
      * directory and have correct file name.
      *
      * @param token interface to implement.
-     * @param root root of directory.
+     * @param root  root of directory.
      * @throws ImplerException if can't implement <code>token</code>.
      */
     @Override
@@ -96,7 +98,7 @@ public class Implementor implements JarImpler {
      * and locate in path <code>jarFile</code>. If source implementation don't exist, build source file. Then compile
      * source file and write binary file to <tt>.jar</tt>. Then delete compiled file.
      *
-     * @param token type token to create implementation for.
+     * @param token   type token to create implementation for.
      * @param jarFile target <tt>.jar</tt> file.
      * @throws ImplerException when can't generate <tt>.jar</tt> file and store implementing of <code>token</code>.
      */
@@ -131,7 +133,8 @@ public class Implementor implements JarImpler {
                 if (sourceFileWasCreated) {
                     deleteFile(String.format("%s/%sImpl.java", root, fullFileName));
                 }
-            } catch (IOException | ImplerException ignored) { }
+            } catch (IOException | ImplerException ignored) {
+            }
         }
     }
 
@@ -140,7 +143,7 @@ public class Implementor implements JarImpler {
      *
      * @param file file to Delete
      * @throws ImplerException then can't get file's path.
-     * @throws IOException then can't delete file.
+     * @throws IOException     then can't delete file.
      */
     private void deleteFile(String file) throws ImplerException, IOException {
         Path fileToDelete = getPath(file);
@@ -151,13 +154,13 @@ public class Implementor implements JarImpler {
 
     /**
      * Compile given <tt>file</tt>.
-     *<p>
+     * <p>
      * Compile source <tt>file</tt>. If <tt>file</tt> don't exist, implement <tt>token</tt> and write
      * information to <tt>file</tt> and compile it.
      *
      * @param token interface to implement.
-     * @param file to compile.
-     * @param root interface's path root.
+     * @param file  to compile.
+     * @param root  interface's path root.
      * @return true if source file <tt>.java</tt> was created, false otherwise.
      * @throws ImplerException when can't compile <code>file</code>.
      */
@@ -227,7 +230,7 @@ public class Implementor implements JarImpler {
      * Create <tt>Path</tt> from file <tt>root</tt> and file's package name.
      * <p>
      *
-     * @param root root of file.
+     * @param root     root of file.
      * @param fileName file name.
      * @return created <tt>Path</tt>
      * @throws ImplerException when can't generate <tt>path</tt>

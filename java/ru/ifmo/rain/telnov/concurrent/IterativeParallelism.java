@@ -24,8 +24,8 @@ public class IterativeParallelism implements ListIP {
     }
 
     protected <T, R> R customMethod(int threads, final List<? extends T> list,
-                                  final Function<Stream<? extends T>, ? extends R> func,
-                                  final Function<Stream<? extends R>, ? extends R> rFunc)
+                                    final Function<Stream<? extends T>, ? extends R> func,
+                                    final Function<Stream<? extends R>, ? extends R> rFunc)
             throws InterruptedException {
         if (threads <= 0) {
             throw new RuntimeException("number of threads must be move then zero!");
@@ -46,7 +46,7 @@ public class IterativeParallelism implements ListIP {
             worker.start();
             workers[i] = worker;
         }
-        for (Thread worker: workers) {
+        for (Thread worker : workers) {
             worker.join();
         }
         return rFunc.apply(values.stream());

@@ -42,7 +42,7 @@ public class ClassCreator {
      * <p>
      * Write file <tt>package</tt> and class name.
      *
-     * @param packageText package text.
+     * @param packageText   package text.
      * @param interfaceName class name.
      * @throws IOException then can't write data.
      */
@@ -93,6 +93,7 @@ public class ClassCreator {
     /**
      * Write <code>line</code> to <tt>BuffedWriter</tt>.
      * <p>
+     *
      * @param line line to write.
      * @throws IOException then can't write data.
      */

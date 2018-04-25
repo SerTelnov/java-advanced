@@ -173,7 +173,7 @@ public class NavigableArraySet<E> extends ArraySet<E> implements NavigableSet<E>
             return iterator.hasPrevious();
         }
 
-         @Override
+        @Override
         public E next() {
             return iterator.previous();
         }

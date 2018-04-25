@@ -55,8 +55,8 @@ public class StudentDB implements StudentQuery {
     public String getMinStudentFirstName(List<Student> students) {
         return getValueFromOptional(
                 students
-                    .stream()
-                    .min(Student::compareTo),
+                        .stream()
+                        .min(Student::compareTo),
                 Student::getFirstName);
     }
 
