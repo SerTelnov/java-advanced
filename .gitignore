@@ -1,0 +1,11 @@
+# other files
+__Test__Walk__
+*.txt
+null
+*.MF
+javadoc/
+
+# IDEA files
+*.iml
+*.idea
+out/
