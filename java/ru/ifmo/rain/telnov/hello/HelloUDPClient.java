@@ -3,6 +3,7 @@ package ru.ifmo.rain.telnov.hello;
 import info.kgeorgiy.java.advanced.hello.HelloClient;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -58,7 +59,14 @@ public class HelloUDPClient implements HelloClient {
                     String sendMessage = String.format("%s%d_%d", message, id, i);
                     int currTimeout = 32;
 
-                    byte[] sendBuff = sendMessage.getBytes();
+                    byte[] sendBuff;
+                    try {
+                        sendBuff = sendMessage.getBytes("UTF-8");
+                    } catch (UnsupportedEncodingException e) {
+                        System.err.println("Can't create message");
+                        return;
+                    }
+
                     DatagramPacket packet = new DatagramPacket(sendBuff, sendBuff.length, address);
                     while (true) {
                         socket.setSoTimeout(currTimeout);
@@ -78,10 +86,8 @@ public class HelloUDPClient implements HelloClient {
                                     break;
                                 }
                             } catch (SocketTimeoutException e) {
-                                if (currTimeout <= Integer.MAX_VALUE / 2) {
+                                if (currTimeout < 6000) {
                                     currTimeout *= 2;
-                                } else {
-                                    currTimeout = Integer.MAX_VALUE;
                                 }
                             }
                         } catch (IOException e) {
